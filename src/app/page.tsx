@@ -1,69 +1,99 @@
-import Image from "next/image";
+import { getProducts, getProductById } from "@/lib/productService";
+import { getCategories } from "@/lib/categoryService";
+import { getSettings } from "@/lib/settingsService";
+import TopAnnouncementBar from "@/components/home/TopAnnouncementBar";
+import HeroModern from "@/components/home/HeroModern";
+import TrustFeatures from "@/components/home/TrustFeatures";
+import CategoryShowcase from "@/components/home/CategoryShowcase";
+import BestSellersSection from "@/components/home/BestSellersSection";
+import ArtisanStorySection from "@/components/home/ArtisanStorySection";
+import CustomOrderCallout from "@/components/home/CustomOrderCallout";
+import ReviewsSection from "@/components/home/ReviewsSection";
+import NewsletterSection from "@/components/home/NewsletterSection";
+import type { Product, Category } from "@/lib/types";
 
-export default function Home() {
+export const revalidate = 60; // Revalidate home page every 60 seconds
+
+export default async function HomePage() {
+  // Fetch settings, categories, and products in parallel.
+  // Errors are caught individually so one failure doesn't crash the whole page.
+  const [settings, categories] = await Promise.all([
+    getSettings().catch(() => null),
+    getCategories().catch(() => [] as Category[]),
+  ]);
+
+  // Best Sellers: if admin has pinned specific product IDs, use those in order.
+  // Otherwise fall back to products with isFeatured === true.
+  const pinnedIds = settings?.featuredProductIds ?? [];
+  let featuredProducts: Product[] = [];
+
+  try {
+    if (pinnedIds.length > 0) {
+      const fetched = await Promise.all(
+        pinnedIds.map((id) => getProductById(id).catch(() => null))
+      );
+      featuredProducts = fetched.filter((p): p is Product => p !== null);
+    } else {
+      featuredProducts = await getProducts({ featured: true }).catch(() => []);
+    }
+  } catch {
+    featuredProducts = [];
+  }
+
+  // If no featured products found in Firestore, fetch any active products
+  if (featuredProducts.length === 0) {
+    try {
+      featuredProducts = await getProducts({ featured: true }).catch(() => []);
+    } catch {
+      featuredProducts = [];
+    }
+  }
+
+  // Serialize Timestamps before passing products to client sub-components
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const serializedFeatured: Product[] = featuredProducts.map((p: Product): any => ({
+    ...p,
+    createdAt: p.createdAt?.toDate?.().toISOString() ?? null,
+    updatedAt: p.updatedAt?.toDate?.().toISOString() ?? null,
+  }));
+
+  // Banner fields from Admin Settings
+  const bannerImageUrl = settings?.bannerImageUrl;
+  const bannerHeadline = settings?.bannerHeadline?.trim() || null;
+  const bannerSubtext  = settings?.bannerSubtext?.trim()  || null;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="flex flex-col min-h-screen">
+      {/* 1. Top Ticker Marquee Announcement */}
+      <TopAnnouncementBar />
+
+      {/* 2. Modern 3D Hero Section */}
+      <HeroModern
+        bannerImageUrl={bannerImageUrl}
+        bannerHeadline={bannerHeadline}
+        bannerSubtext={bannerSubtext}
+      />
+
+      {/* 3. Interactive Trust & Feature Cards */}
+      <TrustFeatures />
+
+      {/* 4. Curated Shop by Category Showcase */}
+      <CategoryShowcase categories={categories} />
+
+      {/* 5. Best Sellers & Interactive Product Showcase */}
+      <BestSellersSection products={serializedFeatured} />
+
+      {/* 6. Artisan Storytelling & Handcrafted Experience */}
+      <ArtisanStorySection />
+
+      {/* 7. Bespoke Custom Orders & Wedding Hampers Callout */}
+      <CustomOrderCallout />
+
+      {/* 8. Social Proof & Customer Reviews Marquee */}
+      <ReviewsSection />
+
+      {/* 9. VIP Community Newsletter & Welcome Coupon */}
+      <NewsletterSection />
     </div>
   );
 }
