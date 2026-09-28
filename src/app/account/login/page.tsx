@@ -1,11 +1,16 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { Suspense, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { loginCustomer, sendCustomerPasswordReset } from "@/lib/customerAuthService";
 
-export default function CustomerLoginPage() {
+const inputCls = "w-full rounded-lg border border-brand-border bg-brand-white px-3 py-2.5 text-sm text-brand-brown placeholder:text-brand-muted focus:outline-none focus:border-brand-terracotta transition-colors";
+
+// ---------------------------------------------------------------------------
+// Inner component that uses useSearchParams — must be inside <Suspense>
+// ---------------------------------------------------------------------------
+function LoginForm() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const redirect     = searchParams.get("redirect") ?? "/account";
@@ -21,8 +26,6 @@ export default function CustomerLoginPage() {
   const [resetSent, setResetSent]       = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError]     = useState<string | null>(null);
-
-  const inputCls = "w-full rounded-lg border border-brand-border bg-brand-white px-3 py-2.5 text-sm text-brand-brown placeholder:text-brand-muted focus:outline-none focus:border-brand-terracotta transition-colors";
 
   async function handleLogin(e: FormEvent) {
     e.preventDefault();
@@ -52,85 +55,92 @@ export default function CustomerLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-brand-cream flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-sm">
-        {/* Card */}
-        <div className="bg-brand-white rounded-2xl border border-brand-border p-8 flex flex-col gap-6">
-          <div className="text-center">
-            <h1 className="font-serif text-2xl font-semibold text-brand-brown">Welcome back</h1>
-            <p className="text-sm text-brand-muted mt-1">Sign in to your Flamira account</p>
-          </div>
-
-          {error && (
-            <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 text-center">
-              {error}
-            </p>
-          )}
-
-          {!showReset ? (
-            <form onSubmit={handleLogin} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="email" className="text-sm font-medium text-brand-brown">Email</label>
-                <input id="email" type="email" autoComplete="email" required value={email}
-                  onChange={(e) => setEmail(e.target.value)} className={inputCls} placeholder="you@example.com" />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="password" className="text-sm font-medium text-brand-brown">Password</label>
-                <input id="password" type="password" autoComplete="current-password" required value={password}
-                  onChange={(e) => setPassword(e.target.value)} className={inputCls} placeholder="••••••••" />
-              </div>
-
-              <button type="submit" disabled={loading}
-                className="mt-1 w-full px-4 py-2.5 rounded-full bg-brand-terracotta text-brand-white font-medium text-sm hover:bg-brand-terracotta-dark disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
-                {loading ? "Signing in…" : "Sign In"}
-              </button>
-
-              <button type="button" onClick={() => { setShowReset(true); setResetEmail(email); }}
-                className="text-xs text-brand-terracotta hover:text-brand-terracotta-dark underline underline-offset-2 text-center transition-colors">
-                Forgot your password?
-              </button>
-            </form>
-          ) : (
-            /* Forgot password inline */
-            <div className="flex flex-col gap-4">
-              <div>
-                <p className="text-sm font-medium text-brand-brown mb-1">Reset your password</p>
-                <p className="text-xs text-brand-muted">Enter your email and we&apos;ll send a reset link.</p>
-              </div>
-
-              {resetSent ? (
-                <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700">
-                  ✓ Reset link sent — check your inbox.
-                </div>
-              ) : (
-                <form onSubmit={handleReset} className="flex flex-col gap-3">
-                  {resetError && (
-                    <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{resetError}</p>
-                  )}
-                  <input type="email" required value={resetEmail} onChange={(e) => setResetEmail(e.target.value)}
-                    className={inputCls} placeholder="you@example.com" />
-                  <button type="submit" disabled={resetLoading}
-                    className="w-full px-4 py-2.5 rounded-full bg-brand-terracotta text-brand-white font-medium text-sm hover:bg-brand-terracotta-dark disabled:opacity-60 transition-colors">
-                    {resetLoading ? "Sending…" : "Send Reset Link"}
-                  </button>
-                </form>
-              )}
-
-              <button type="button" onClick={() => setShowReset(false)}
-                className="text-xs text-brand-stone hover:text-brand-brown underline underline-offset-2 text-center transition-colors">
-                ← Back to sign in
-              </button>
-            </div>
-          )}
+    <div className="w-full max-w-sm">
+      <div className="bg-brand-white rounded-2xl border border-brand-border p-8 flex flex-col gap-6">
+        <div className="text-center">
+          <h1 className="font-serif text-2xl font-semibold text-brand-brown">Welcome back</h1>
+          <p className="text-sm text-brand-muted mt-1">Sign in to your Flamira account</p>
         </div>
 
-        <p className="text-center text-sm text-brand-stone mt-5">
-          Don&apos;t have an account?{" "}
-          <Link href="/account/signup" className="text-brand-terracotta hover:text-brand-terracotta-dark underline underline-offset-2 transition-colors">
-            Create one
-          </Link>
-        </p>
+        {error && (
+          <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 text-center">
+            {error}
+          </p>
+        )}
+
+        {!showReset ? (
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="email" className="text-sm font-medium text-brand-brown">Email</label>
+              <input id="email" type="email" autoComplete="email" required value={email}
+                onChange={(e) => setEmail(e.target.value)} className={inputCls} placeholder="you@example.com" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="password" className="text-sm font-medium text-brand-brown">Password</label>
+              <input id="password" type="password" autoComplete="current-password" required value={password}
+                onChange={(e) => setPassword(e.target.value)} className={inputCls} placeholder="••••••••" />
+            </div>
+            <button type="submit" disabled={loading}
+              className="mt-1 w-full px-4 py-2.5 rounded-full bg-brand-terracotta text-brand-white font-medium text-sm hover:bg-brand-terracotta-dark disabled:opacity-60 disabled:cursor-not-allowed transition-colors">
+              {loading ? "Signing in…" : "Sign In"}
+            </button>
+            <button type="button" onClick={() => { setShowReset(true); setResetEmail(email); }}
+              className="text-xs text-brand-terracotta hover:text-brand-terracotta-dark underline underline-offset-2 text-center transition-colors">
+              Forgot your password?
+            </button>
+          </form>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <div>
+              <p className="text-sm font-medium text-brand-brown mb-1">Reset your password</p>
+              <p className="text-xs text-brand-muted">Enter your email and we&apos;ll send a reset link.</p>
+            </div>
+            {resetSent ? (
+              <div className="rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700">
+                ✓ Reset link sent — check your inbox.
+              </div>
+            ) : (
+              <form onSubmit={handleReset} className="flex flex-col gap-3">
+                {resetError && (
+                  <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{resetError}</p>
+                )}
+                <input type="email" required value={resetEmail} onChange={(e) => setResetEmail(e.target.value)}
+                  className={inputCls} placeholder="you@example.com" />
+                <button type="submit" disabled={resetLoading}
+                  className="w-full px-4 py-2.5 rounded-full bg-brand-terracotta text-brand-white font-medium text-sm hover:bg-brand-terracotta-dark disabled:opacity-60 transition-colors">
+                  {resetLoading ? "Sending…" : "Send Reset Link"}
+                </button>
+              </form>
+            )}
+            <button type="button" onClick={() => setShowReset(false)}
+              className="text-xs text-brand-stone hover:text-brand-brown underline underline-offset-2 text-center transition-colors">
+              ← Back to sign in
+            </button>
+          </div>
+        )}
       </div>
+
+      <p className="text-center text-sm text-brand-stone mt-5">
+        Don&apos;t have an account?{" "}
+        <Link href="/account/signup" className="text-brand-terracotta hover:text-brand-terracotta-dark underline underline-offset-2 transition-colors">
+          Create one
+        </Link>
+      </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Page — wraps LoginForm in Suspense (required for useSearchParams at build)
+// ---------------------------------------------------------------------------
+export default function CustomerLoginPage() {
+  return (
+    <div className="min-h-screen bg-brand-cream flex items-center justify-center px-4 py-16">
+      <Suspense fallback={
+        <div className="w-7 h-7 rounded-full border-4 border-brand-terracotta border-t-transparent animate-spin" />
+      }>
+        <LoginForm />
+      </Suspense>
     </div>
   );
 }

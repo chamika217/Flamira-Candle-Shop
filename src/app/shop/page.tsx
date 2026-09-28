@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getProducts } from "@/lib/productService";
 import { getCategories } from "@/lib/categoryService";
 import type { Product, Category } from "@/lib/types";
@@ -50,11 +51,17 @@ export default async function ShopPage(props: PageProps<"/shop">) {
         </div>
       </div>
 
-      <ShopFilters
-        products={serializedProducts}
-        categories={categories}
-        initialCategorySlug={initialCategorySlug}
-      />
+      <Suspense fallback={
+        <div className="flex justify-center py-24">
+          <div className="w-7 h-7 rounded-full border-4 border-brand-terracotta border-t-transparent animate-spin" />
+        </div>
+      }>
+        <ShopFilters
+          products={serializedProducts}
+          categories={categories}
+          initialCategorySlug={initialCategorySlug}
+        />
+      </Suspense>
     </div>
   );
 }

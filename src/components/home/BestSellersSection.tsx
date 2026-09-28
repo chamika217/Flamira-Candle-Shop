@@ -201,6 +201,7 @@ export default function BestSellersSection({ products }: BestSellersSectionProps
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                suppressHydrationWarning
                 className={`px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all duration-300 ${
                   activeTab === tab.id
                     ? "bg-brand-terracotta text-white shadow-md shadow-brand-terracotta/20"
