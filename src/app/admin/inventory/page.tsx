@@ -1,6 +1,6 @@
 "use client";
 
-import {
+import React, {
   useEffect,
   useState,
   useMemo,
@@ -397,7 +397,7 @@ export default function AdminInventoryPage() {
                   const isHistoryOpen = historyOpenId === product.id;
 
                   return (
-                    <>
+                    <React.Fragment key={product.id}>
                       <tr
                         key={product.id}
                         className="border-t border-gray-100 hover:bg-gray-50 transition-colors"
@@ -482,7 +482,7 @@ export default function AdminInventoryPage() {
                           </td>
                         </tr>
                       )}
-                    </>
+                    </React.Fragment>
                   );
                 })}
               </tbody>
