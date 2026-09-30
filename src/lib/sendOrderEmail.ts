@@ -63,5 +63,13 @@ export async function sendOrderConfirmationEmail(order: Order): Promise<void> {
   } catch (err) {
     // Log but never rethrow — a failed email must never break the checkout flow
     console.error("[EmailJS] Failed to send order confirmation email:", err);
+    // Log detailed error for debugging
+    if (err && typeof err === "object") {
+      console.error("[EmailJS] Error details:", JSON.stringify(err, null, 2));
+      // @ts-expect-error — EmailJS error shape
+      if (err.text) console.error("[EmailJS] Error text:", err.text);
+      // @ts-expect-error — EmailJS error shape
+      if (err.status) console.error("[EmailJS] Error status:", err.status);
+    }
   }
 }

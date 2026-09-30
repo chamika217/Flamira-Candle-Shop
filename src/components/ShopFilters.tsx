@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { Product, Category } from "@/lib/types";
+import { useCart } from "@/context/CartContext";
+import { useWishlist } from "@/context/WishlistContext";
+import { useToast } from "@/context/ToastContext";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -226,43 +229,158 @@ function FilterPanelContent({ filters, categories, allOccasionTags, onToggleCate
 }
 
 // ---------------------------------------------------------------------------
-// Product card
+// Product card — enhanced with badges, wishlist, Add to Cart, hover actions
 // ---------------------------------------------------------------------------
 function ProductCard({ product }: { product: Product }) {
-  const thumbnail = product.images[0] ?? null;
-  const hasSale = product.salePrice !== undefined && product.salePrice < product.price;
+  const { addItem } = useCart();
+  const { toggle, isWishlisted } = useWishlist();
+  const { showToast } = useToast();
+  const [adding, setAdding] = useState(false);
+
+  const thumbnail  = product.images[0] ?? null;
+  const hasSale    = product.salePrice !== undefined && product.salePrice < product.price;
   const displayPrice = hasSale ? product.salePrice! : product.price;
   const outOfStock = !isInStock(product);
+  const wishlisted = isWishlisted(product.id);
+
+  // Badge logic
+  const badge = outOfStock
+    ? { label: "Out of Stock", cls: "bg-gray-600 text-white" }
+    : hasSale
+    ? { label: "Sale", cls: "bg-brand-terracotta text-white" }
+    : product.isFeatured
+    ? { label: "Best Seller", cls: "bg-amber-500 text-white" }
+    : product.stockQty > 0 && product.stockQty <= product.lowStockThreshold
+    ? { label: "Low Stock", cls: "bg-amber-500 text-white" }
+    : null;
+
+  function handleAddToCart(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (outOfStock || adding) return;
+    setAdding(true);
+    addItem(
+      {
+        productId: product.id,
+        slug:      product.slug,
+        title:     product.title,
+        price:     displayPrice,
+        image:     product.images[0] ?? "",
+      },
+      1
+    );
+    showToast(`${product.title} added to cart!`);
+    setTimeout(() => setAdding(false), 1200);
+  }
+
+  function handleWishlist(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    toggle(product.id);
+    showToast(
+      wishlisted ? "Removed from wishlist" : "Added to wishlist ♡",
+      wishlisted ? "info" : "success"
+    );
+  }
 
   return (
-    <article className="group relative flex flex-col rounded-2xl overflow-hidden border border-brand-border bg-brand-white hover:border-brand-terracotta transition-colors">
-      <Link href={`/product/${product.slug}`}
-        className="block relative aspect-square bg-brand-ivory overflow-hidden" tabIndex={-1} aria-hidden="true">
-        {thumbnail ? (
-          <Image src={thumbnail} alt={product.title} fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-300" />
-        ) : (
-          <div className="flex items-center justify-center h-full">
-            <span className="text-sm text-brand-muted">No image</span>
-          </div>
+    <article className="group relative flex flex-col rounded-2xl overflow-hidden border border-brand-border bg-brand-white hover:border-brand-terracotta hover:shadow-lg transition-all duration-300">
+      {/* Image area */}
+      <div className="relative aspect-square bg-brand-ivory overflow-hidden">
+        <Link href={`/product/${product.slug}`} className="block w-full h-full" aria-label={product.title}>
+          {thumbnail ? (
+            <Image
+              src={thumbnail}
+              alt={product.title}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <span className="text-sm text-brand-muted">No image</span>
+            </div>
+          )}
+        </Link>
+
+        {/* Badge */}
+        {badge && (
+          <span className={`absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide z-10 ${badge.cls}`}>
+            {badge.label}
+          </span>
         )}
-        {outOfStock && (
-          <div className="absolute inset-0 bg-brand-cream/70 flex items-center justify-center">
-            <span className="bg-brand-brown text-brand-white text-xs font-semibold px-3 py-1 rounded-full">Out of Stock</span>
-          </div>
-        )}
-      </Link>
-      <div className="flex flex-col gap-1.5 p-4 flex-1">
+
+        {/* Wishlist button */}
+        <button
+          type="button"
+          onClick={handleWishlist}
+          aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+          className={[
+            "absolute top-2.5 right-2.5 z-10 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200",
+            wishlisted
+              ? "bg-brand-terracotta text-white shadow-md"
+              : "bg-white/80 text-brand-stone hover:bg-brand-terracotta hover:text-white opacity-0 group-hover:opacity-100 shadow-sm",
+          ].join(" ")}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+            fill={wishlisted ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"
+            strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </button>
+
+        {/* Hover overlay with actions */}
+        <div className="absolute inset-0 bg-brand-brown/0 group-hover:bg-brand-brown/10 transition-colors duration-300 pointer-events-none" />
+
+        {/* Quick View + Add to Cart — slide up on hover */}
+        <div className="absolute bottom-0 left-0 right-0 flex gap-2 p-2.5 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+          <Link
+            href={`/product/${product.slug}`}
+            className="flex-1 text-center bg-white/95 text-brand-brown text-xs font-semibold py-2 rounded-lg hover:bg-brand-ivory transition-colors shadow-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            View Product
+          </Link>
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={outOfStock || adding}
+            className={[
+              "flex-1 text-xs font-semibold py-2 rounded-lg transition-colors shadow-sm",
+              outOfStock
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : adding
+                ? "bg-emerald-600 text-white"
+                : "bg-brand-terracotta text-white hover:bg-brand-terracotta-dark",
+            ].join(" ")}
+          >
+            {adding ? "Added ✓" : outOfStock ? "Out of Stock" : "Add to Cart"}
+          </button>
+        </div>
+      </div>
+
+      {/* Details */}
+      <div className="flex flex-col gap-1.5 p-3.5 sm:p-4 flex-1">
         <Link href={`/product/${product.slug}`}>
           <h3 className="font-serif text-sm sm:text-base font-semibold text-brand-brown leading-snug line-clamp-2 hover:text-brand-terracotta transition-colors">
             {product.title}
           </h3>
         </Link>
+
+        {/* Price row */}
         <div className="flex items-baseline gap-2 mt-auto pt-1">
-          <span className="text-brand-terracotta font-semibold text-sm">{formatPrice(displayPrice)}</span>
-          {hasSale && <span className="text-brand-muted text-xs line-through">{formatPrice(product.price)}</span>}
+          <span className="text-brand-terracotta font-bold text-sm sm:text-base">
+            {formatPrice(displayPrice)}
+          </span>
+          {hasSale && (
+            <span className="text-brand-muted text-xs line-through">{formatPrice(product.price)}</span>
+          )}
         </div>
+
+        {/* Stock indicator */}
+        {!outOfStock && product.stockQty > 0 && product.stockQty <= product.lowStockThreshold && (
+          <p className="text-[11px] text-amber-600 font-medium">Only {product.stockQty} left!</p>
+        )}
       </div>
     </article>
   );

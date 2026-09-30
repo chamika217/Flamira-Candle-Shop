@@ -156,10 +156,16 @@ export default function CheckoutPage() {
 
   useEffect(() => setHydrated(true), []);
   useEffect(() => {
-    // Wait for BOTH React hydration AND cart localStorage read
-    // before redirecting — prevents redirect when cart loads async
     if (hydrated && cartHydrated && items.length === 0) router.replace("/cart");
   }, [hydrated, cartHydrated, items.length, router]);
+
+  // Issue 5: Redirect to login if not signed in, preserving cart
+  const { loading: authLoading } = useCustomerAuth();
+  useEffect(() => {
+    if (hydrated && !authLoading && !user) {
+      router.replace("/account/login?redirect=/checkout");
+    }
+  }, [hydrated, authLoading, user, router]);
 
   // Pre-fill form from customer profile when available
   useEffect(() => {
@@ -342,7 +348,11 @@ export default function CheckoutPage() {
     }
   }
 
-  if (!hydrated) return null;
+  if (!hydrated || authLoading) return (
+    <div className="min-h-screen bg-brand-cream flex items-center justify-center">
+      <div className="w-7 h-7 rounded-full border-4 border-brand-terracotta border-t-transparent animate-spin" />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-brand-cream">

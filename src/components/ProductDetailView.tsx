@@ -7,6 +7,8 @@ import type { Product, Review } from "@/lib/types";
 import { useCart } from "@/context/CartContext";
 import { trackViewContent, trackAddToCart } from "@/lib/pixels";
 import { getApprovedReviews } from "@/lib/reviewService";
+import { useToast } from "@/context/ToastContext";
+import { useWishlist } from "@/context/WishlistContext";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -255,6 +257,9 @@ function ReviewsSection({ productId }: { productId: string }) {
 
 export default function ProductDetailView({ product }: { product: Product }) {
   const { addItem } = useCart();
+  const { showToast } = useToast();
+  const { toggle, isWishlisted } = useWishlist();
+  const wishlisted = isWishlisted(product.id);
 
   // Fire ViewContent once when the component mounts
   useEffect(() => {
@@ -298,6 +303,7 @@ export default function ProductDetailView({ product }: { product: Product }) {
       { id: product.id, title: product.title, price: product.salePrice ?? product.price },
       qty
     );
+    showToast(`${product.title} added to cart!`);
     setAdded(true);
     setTimeout(() => setAdded(false), 1500);
   }, [addItem, isDisabled, product, qty]);
@@ -457,6 +463,28 @@ export default function ProductDetailView({ product }: { product: Product }) {
                 aria-live="polite"
               >
                 {isDisabled ? "Out of Stock" : added ? "Added to Cart ✓" : "Add to Cart"}
+              </button>
+
+              {/* Wishlist button */}
+              <button
+                type="button"
+                onClick={() => {
+                  toggle(product.id);
+                  showToast(wishlisted ? "Removed from wishlist" : "Added to wishlist ♡", wishlisted ? "info" : "success");
+                }}
+                aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+                className={[
+                  "w-11 h-11 rounded-full border flex items-center justify-center transition-all",
+                  wishlisted
+                    ? "bg-brand-terracotta border-brand-terracotta text-white"
+                    : "border-brand-border text-brand-stone hover:border-brand-terracotta hover:text-brand-terracotta",
+                ].join(" ")}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                  fill={wishlisted ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2"
+                  strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
               </button>
             </div>
 

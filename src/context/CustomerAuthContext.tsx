@@ -9,60 +9,69 @@ import {
   type ReactNode,
 } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { getCustomerProfile } from "@/lib/customerAuthService";
+import { doc, onSnapshot } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
 import type { CustomerProfile } from "@/lib/types";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
 interface CustomerAuthContextValue {
-  user:    User | null;
+  user:    User | null;   // null if not signed in OR if signed in as admin
   profile: CustomerProfile | null;
-  /** true until the initial onAuthStateChanged fires and profile is fetched */
   loading: boolean;
 }
 
-// ---------------------------------------------------------------------------
-// Context
-// ---------------------------------------------------------------------------
-
 const CustomerAuthContext = createContext<CustomerAuthContextValue | null>(null);
 
-// ---------------------------------------------------------------------------
-// Provider
-// ---------------------------------------------------------------------------
-
-/**
- * Listens to the same Firebase `auth` instance as AdminAuthContext.
- * Multiple `onAuthStateChanged` listeners on the same auth instance are
- * fully supported by the Firebase SDK — they fire independently and do NOT
- * interfere with each other.
- *
- * The customer-vs-admin distinction is purely at the Firestore document level:
- *  - customers live in `customers/{uid}`
- *  - admins live in `admins/{uid}`
- * A customer will have no `admins/{uid}` document, so AdminAuthContext will
- * produce `adminProfile: null` for them (the "Access Denied" state).
- */
 export function CustomerAuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser]       = useState<User | null>(null);
   const [profile, setProfile] = useState<CustomerProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
-      if (firebaseUser) {
-        const p = await getCustomerProfile(firebaseUser.uid).catch(() => null);
-        setProfile(p);
-      } else {
+    let profileUnsub: (() => void) | null = null;
+
+    const authUnsub = onAuthStateChanged(auth, (firebaseUser) => {
+      // Unsubscribe previous profile listener if any
+      profileUnsub?.();
+      profileUnsub = null;
+
+      if (!firebaseUser) {
+        setUser(null);
         setProfile(null);
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      // Subscribe to customers/{uid} with onSnapshot so profile updates are live.
+      // If the document doesn't exist (e.g. this is an admin account), profile = null
+      // and user = null — admin accounts are invisible to the storefront.
+      profileUnsub = onSnapshot(
+        doc(db, "customers", firebaseUser.uid),
+        (snap) => {
+          if (snap.exists()) {
+            const data = snap.data() as Omit<CustomerProfile, "uid">;
+            setProfile({ uid: firebaseUser.uid, ...data } as CustomerProfile);
+            setUser(firebaseUser); // only expose user if customer doc exists
+          } else {
+            // No customers/{uid} doc → this is an admin or unknown account.
+            // Expose neither user nor profile to the storefront.
+            setProfile(null);
+            setUser(null);
+          }
+          setLoading(false);
+        },
+        () => {
+          // Permission denied or other error — treat as guest
+          setProfile(null);
+          setUser(null);
+          setLoading(false);
+        }
+      );
     });
-    return unsubscribe;
+
+    return () => {
+      authUnsub();
+      profileUnsub?.();
+    };
   }, []);
 
   const value = useMemo<CustomerAuthContextValue>(
@@ -76,10 +85,6 @@ export function CustomerAuthProvider({ children }: { children: ReactNode }) {
     </CustomerAuthContext.Provider>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
 
 export function useCustomerAuth(): CustomerAuthContextValue {
   const ctx = useContext(CustomerAuthContext);
