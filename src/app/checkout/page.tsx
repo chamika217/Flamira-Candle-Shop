@@ -154,10 +154,13 @@ export default function CheckoutPage() {
       .finally(() => setSettingsLoaded(true));
   }, []);
 
+  const [orderComplete, setOrderComplete] = useState(false);
+
   useEffect(() => setHydrated(true), []);
   useEffect(() => {
-    if (hydrated && cartHydrated && items.length === 0) router.replace("/cart");
-  }, [hydrated, cartHydrated, items.length, router]);
+    // Don't redirect to cart if we just placed an order successfully
+    if (hydrated && cartHydrated && items.length === 0 && !orderComplete) router.replace("/cart");
+  }, [hydrated, cartHydrated, items.length, router, orderComplete]);
 
   // Issue 5: Redirect to login if not signed in, preserving cart
   const { loading: authLoading } = useCustomerAuth();
@@ -325,9 +328,13 @@ export default function CheckoutPage() {
         updateCustomerProfile(user.uid, { phone: values.phone.trim() }).catch(() => {});
       }
 
-      // Clear cart first, then navigate to confirmation
-      clearCart();
-      router.push(`/order/${order.orderNumber}`);
+      // Navigate to confirmation FIRST, then clear cart.
+      // Clearing the cart before navigation causes the "cart empty" redirect
+      // to fire and race with the order confirmation redirect.
+      const orderNumber = order.orderNumber;
+      setOrderComplete(true); // prevent cart-empty redirect from firing
+      router.push(`/order/${orderNumber}`);
+      setTimeout(() => clearCart(), 300);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong. Please try again.";
 
