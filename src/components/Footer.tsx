@@ -68,10 +68,10 @@ export default function Footer() {
 
       {/* Main footer content */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-14">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 items-start">
 
-          {/* Brand column */}
-          <div className="flex flex-col gap-5 sm:col-span-2 lg:col-span-1">
+          {/* Brand column — full width on mobile, 1 col on lg */}
+          <div className="col-span-2 sm:col-span-2 lg:col-span-1 flex flex-col gap-5">
             {/* Logo & brand */}
             <Link href="/" className="group flex items-center gap-3">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -123,8 +123,8 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Shop links */}
-          <div>
+          {/* Shop by Category */}
+          <div className="flex flex-col gap-0">
             <h3 className="font-serif text-sm font-bold uppercase tracking-widest text-white/90 mb-5">
               Shop By Category
             </h3>
@@ -138,17 +138,17 @@ export default function Footer() {
                   </Link>
                 </li>
               ))}
-              <li>
+              <li className="mt-2">
                 <Link href="/shop"
-                  className="inline-flex items-center gap-1.5 mt-2 text-xs font-semibold text-brand-terracotta hover:text-white transition-colors">
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-terracotta hover:text-white transition-colors">
                   View All Products →
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Quick links + Policies */}
-          <div>
+          {/* Quick Links */}
+          <div className="flex flex-col gap-0">
             <h3 className="font-serif text-sm font-bold uppercase tracking-widest text-white/90 mb-5">
               Quick Links
             </h3>
@@ -163,13 +163,17 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
-            <h3 className="font-serif text-sm font-bold uppercase tracking-widest text-white/90 mb-4 mt-7">
+
+            {/* Policies — same column, visually separated */}
+            <h3 className="font-serif text-sm font-bold uppercase tracking-widest text-white/90 mb-4 mt-8">
               Policies
             </h3>
             <ul className="flex flex-col gap-2.5">
               {POLICY_LINKS.map(({ label, href }) => (
                 <li key={href}>
-                  <Link href={href} className="text-xs text-white/50 hover:text-white/80 transition-colors">
+                  <Link href={href}
+                    className="flex items-center gap-2 text-xs text-white/50 hover:text-white/80 transition-colors group">
+                    <ArrowRight className="w-3 h-3 text-brand-terracotta opacity-0 group-hover:opacity-100 -ml-1 transition-all" />
                     {label}
                   </Link>
                 </li>
@@ -179,10 +183,10 @@ export default function Footer() {
 
           {/* Get in touch / CTA */}
           <div className="flex flex-col gap-5">
-            <h3 className="font-serif text-sm font-bold uppercase tracking-widest text-white/90">
+            <h3 className="font-serif text-sm font-bold uppercase tracking-widest text-white/90 mb-0">
               Chat With Us
             </h3>
-            <p className="text-sm text-white/60 leading-relaxed">
+            <p className="text-sm text-white/60 leading-relaxed -mt-2">
               Have a custom order request? Planning a wedding or event? We&apos;d love to create something special for you.
             </p>
             <a href={BUSINESS.whatsappMessage} target="_blank" rel="noopener noreferrer"
@@ -198,11 +202,11 @@ export default function Footer() {
 
             {/* COD badge */}
             <div className="mt-auto p-4 rounded-2xl bg-white/5 border border-white/10">
-              <p className="text-xs font-bold text-white/80 mb-2">🛍️ Safe & Easy Shopping</p>
+              <p className="text-xs font-bold text-white/80 mb-2">🛍️ Safe &amp; Easy Shopping</p>
               <div className="flex flex-col gap-1">
                 <p className="text-xs text-white/55">✓ Cash on Delivery available</p>
                 <p className="text-xs text-white/55">✓ Island-wide delivery</p>
-                <p className="text-xs text-white/55">✓ 100% handmade & authentic</p>
+                <p className="text-xs text-white/55">✓ 100% handmade &amp; authentic</p>
               </div>
             </div>
           </div>
