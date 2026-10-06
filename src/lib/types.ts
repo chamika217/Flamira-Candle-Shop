@@ -124,18 +124,126 @@ export interface Order {
 }
 
 // ---------------------------------------------------------------------------
-// Admin
+// Admin & User Control
 // ---------------------------------------------------------------------------
 
-export type AdminRole = "owner" | "staff";
+export type AccountStatus = "active" | "inactive" | "suspended";
+
+export type AdminRole = "owner" | "manager" | "staff" | "content_editor";
 
 export interface AdminUser {
   uid: string;
   name: string;
   email: string;
-  /** owner = full access; staff = Orders + Inventory only */
+  /** owner = full access; manager = store ops; staff = Orders + Inventory; content_editor = CMS & Media */
   role: AdminRole;
+  status?: AccountStatus;
+  statusReason?: string;
+  permissions?: string[];
+  phone?: string;
   createdAt: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+// ---------------------------------------------------------------------------
+// Customer (storefront account)
+// ---------------------------------------------------------------------------
+
+export interface CustomerAddress {
+  line1: string;
+  city: string;
+  district: string;
+  postalCode?: string;
+  label?: string; // e.g. "Home", "Office"
+}
+
+export interface CustomerProfile {
+  uid: string;
+  name: string;
+  email: string;
+  phone: string;
+  status?: AccountStatus;
+  statusReason?: string;
+  addresses: CustomerAddress[];
+  createdAt: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+// Unified representation for User Management
+export interface UnifiedUser {
+  id: string;
+  uid: string;
+  name: string;
+  email: string;
+  phone?: string;
+  userType: "customer" | "admin" | "guest";
+  role: string;
+  status: AccountStatus;
+  statusReason?: string;
+  permissions?: string[];
+  orderCount: number;
+  totalSpent: number;
+  addresses?: CustomerAddress[];
+  createdAt?: Timestamp;
+  lastActive?: Timestamp;
+}
+
+// ---------------------------------------------------------------------------
+// Master Data
+// ---------------------------------------------------------------------------
+
+export interface ProductSizeOption {
+  id: string;
+  name: string;
+  code: string;
+  weightGrams?: number;
+  description?: string;
+  sortOrder: number;
+  active: boolean;
+}
+
+export interface ProductColorVariantOption {
+  id: string;
+  name: string;
+  colorHex?: string;
+  scentFamily?: string;
+  description?: string;
+  sortOrder: number;
+  active: boolean;
+}
+
+export interface OrderStatusConfig {
+  key: OrderStatus;
+  label: string;
+  badgeBg: string;
+  badgeText: string;
+  description: string;
+  sortOrder: number;
+  isTerminal?: boolean;
+}
+
+export interface UserRoleDefinition {
+  id: string;
+  key: AdminRole | "customer";
+  title: string;
+  description: string;
+  permissions: string[];
+  isSystem: boolean;
+}
+
+export interface SystemConfig {
+  storeName: string;
+  tagline: string;
+  contactEmail: string;
+  contactPhone: string;
+  whatsappNumber: string;
+  currency: string;
+  orderPrefix: string;
+  standardDeliveryFee: number;
+  freeDeliveryThreshold: number;
+  lowStockThreshold: number;
+  allowBackordersDefault: boolean;
+  maintenanceMode: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -206,23 +314,12 @@ export interface Review {
   createdAt: Timestamp;
 }
 
-// ---------------------------------------------------------------------------
-// Customer (storefront account)
-// ---------------------------------------------------------------------------
-
-export interface CustomerAddress {
-  line1: string;
-  city: string;
-  district: string;
-  postalCode?: string;
-  label?: string; // e.g. "Home", "Office"
+export interface MasterData {
+  sizes: ProductSizeOption[];
+  colorVariants: ProductColorVariantOption[];
+  orderStatuses: OrderStatusConfig[];
+  roles: UserRoleDefinition[];
+  systemConfig: SystemConfig;
+  updatedAt?: Timestamp;
 }
 
-export interface CustomerProfile {
-  uid: string;
-  name: string;
-  email: string;
-  phone: string;
-  addresses: CustomerAddress[];
-  createdAt: Timestamp;
-}

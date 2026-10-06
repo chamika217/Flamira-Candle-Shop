@@ -124,23 +124,58 @@ function SettingsIcon() {
   );
 }
 
+function UsersControlIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      <polyline points="19 11 22 14 17 19"/>
+    </svg>
+  );
+}
+function FeaturedIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </svg>
+  );
+}
+function MasterDataIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <ellipse cx="12" cy="5" rx="9" ry="3"/>
+      <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/>
+      <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+    </svg>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Nav links
 // ---------------------------------------------------------------------------
 
 const NAV_LINKS: NavLink[] = [
-  { label: "Dashboard", href: "/admin/dashboard",  icon: <DashIcon /> },
-  { label: "Products",  href: "/admin/products",   icon: <ProductsIcon />, ownerOnly: true },
-  { label: "Categories",href: "/admin/categories", icon: <CatIcon />,      ownerOnly: true },
-  { label: "Orders",    href: "/admin/orders",     icon: <OrdersIcon /> },
-  { label: "Inventory", href: "/admin/inventory",  icon: <InventoryIcon /> },
-  { label: "Customers", href: "/admin/customers",  icon: <CustomersIcon />, ownerOnly: true },
-  { label: "Delivery",  href: "/admin/delivery",   icon: <DeliveryIcon />,  ownerOnly: true },
-  { label: "Content",   href: "/admin/content",    icon: <ContentIcon />,   ownerOnly: true },
-  { label: "Reviews",   href: "/admin/reviews",    icon: <ReviewsIcon />,   ownerOnly: false },
-  { label: "Reports",   href: "/admin/reports",    icon: <ReportsIcon />,   ownerOnly: true  },
-  { label: "Settings",  href: "/admin/settings",   icon: <SettingsIcon />,  ownerOnly: true },
+  { label: "Dashboard",        href: "/admin/dashboard",   icon: <DashIcon /> },
+  { label: "Orders",           href: "/admin/orders",      icon: <OrdersIcon /> },
+  { label: "User Control",     href: "/admin/users",       icon: <UsersControlIcon />, ownerOnly: true },
+  { label: "Featured Products",href: "/admin/featured",    icon: <FeaturedIcon />,     ownerOnly: true },
+  { label: "Master Data",      href: "/admin/master-data", icon: <MasterDataIcon />,   ownerOnly: true },
+  { label: "Products",         href: "/admin/products",    icon: <ProductsIcon />,     ownerOnly: true },
+  { label: "Categories",       href: "/admin/categories",  icon: <CatIcon />,          ownerOnly: true },
+  { label: "Inventory",        href: "/admin/inventory",   icon: <InventoryIcon /> },
+  { label: "Customers",        href: "/admin/customers",   icon: <CustomersIcon />,    ownerOnly: true },
+  { label: "Delivery",         href: "/admin/delivery",    icon: <DeliveryIcon />,     ownerOnly: true },
+  { label: "Content",          href: "/admin/content",     icon: <ContentIcon />,      ownerOnly: true },
+  { label: "Reviews",          href: "/admin/reviews",     icon: <ReviewsIcon />,      ownerOnly: false },
+  { label: "Reports",          href: "/admin/reports",     icon: <ReportsIcon />,      ownerOnly: true  },
+  { label: "Settings",         href: "/admin/settings",    icon: <SettingsIcon />,     ownerOnly: true },
 ];
+
 
 // ---------------------------------------------------------------------------
 // Sidebar shell (uses auth context — must be inside AdminAuthProvider)
