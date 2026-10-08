@@ -131,24 +131,31 @@ function FilterPanelContent({ filters, categories, allOccasionTags, onToggleCate
 
   return (
     <div className="flex flex-col gap-0">
-      {/* Category — grouped by parent */}
+      {/* Category — parent only, subcategories expand on click */}
       {categories.length > 0 && (
         <FilterSection title="Category">
           <ul className="flex flex-col gap-1">
             {parents.map((parent) => {
               const kids = childrenOf(parent.id);
+              const isParentSelected = filters.categoryIds.has(parent.id);
+              const anyKidSelected = kids.some(k => filters.categoryIds.has(k.id));
+              const expanded = isParentSelected || anyKidSelected;
               return (
                 <li key={parent.id}>
                   <label className="flex items-center gap-2.5 cursor-pointer group py-1">
-                    <input type="checkbox" checked={filters.categoryIds.has(parent.id)}
+                    <input type="checkbox" checked={isParentSelected}
                       onChange={() => onToggleCategory(parent.id)}
                       className="w-4 h-4 rounded border-brand-border accent-brand-terracotta cursor-pointer" />
-                    <span className="text-sm font-semibold text-brand-brown group-hover:text-brand-terracotta transition-colors">
+                    <span className="text-sm font-semibold text-brand-brown group-hover:text-brand-terracotta transition-colors flex-1">
                       {parent.name}
                     </span>
+                    {kids.length > 0 && (
+                      <span className="text-[10px] text-brand-muted">{expanded ? "▲" : "▼"}</span>
+                    )}
                   </label>
-                  {kids.length > 0 && (
-                    <ul className="ml-6 flex flex-col gap-1">
+                  {/* Subcategories — only shown when parent is selected */}
+                  {kids.length > 0 && expanded && (
+                    <ul className="ml-6 flex flex-col gap-1 mt-1 mb-1">
                       {kids.map((kid) => (
                         <li key={kid.id}>
                           <label className="flex items-center gap-2.5 cursor-pointer group py-0.5">

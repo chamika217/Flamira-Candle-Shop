@@ -1,31 +1,35 @@
 "use client";
 
-import { Suspense, useState, type FormEvent } from "react";
+import { Suspense, useState, useEffect, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { loginCustomer, sendCustomerPasswordReset } from "@/lib/customerAuthService";
+import { useCustomerAuth } from "@/context/CustomerAuthContext";
 
 const inputCls = "w-full rounded-lg border border-brand-border bg-brand-white px-3 py-2.5 text-sm text-brand-brown placeholder:text-brand-muted focus:outline-none focus:border-brand-terracotta transition-colors";
 
-// ---------------------------------------------------------------------------
-// Inner component that uses useSearchParams — must be inside <Suspense>
-// ---------------------------------------------------------------------------
 function LoginForm() {
   const router       = useRouter();
   const searchParams = useSearchParams();
   const redirect     = searchParams.get("redirect") ?? "/account";
+  const { user, loading: authLoading } = useCustomerAuth();
 
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [error, setError]       = useState<string | null>(null);
   const [loading, setLoading]   = useState(false);
-
-  // Forgot password
   const [showReset, setShowReset]       = useState(false);
   const [resetEmail, setResetEmail]     = useState("");
   const [resetSent, setResetSent]       = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError]     = useState<string | null>(null);
+
+  // If already logged in (or after login completes), redirect
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace(redirect);
+    }
+  }, [authLoading, user, redirect, router]);
 
   async function handleLogin(e: FormEvent) {
     e.preventDefault();
@@ -33,7 +37,8 @@ function LoginForm() {
     setLoading(true);
     try {
       await loginCustomer(email, password);
-      router.replace(redirect);
+      // Don't manually redirect here — the useEffect above will fire
+      // once CustomerAuthContext picks up the new Firebase auth state
     } catch {
       setError("Invalid email or password. Please try again.");
       setLoading(false);
@@ -52,6 +57,15 @@ function LoginForm() {
     } finally {
       setResetLoading(false);
     }
+  }
+
+  // Show spinner while auth state is loading or redirecting after login
+  if (authLoading || (!authLoading && user)) {
+    return (
+      <div className="flex justify-center py-16">
+        <div className="w-7 h-7 rounded-full border-4 border-brand-terracotta border-t-transparent animate-spin" />
+      </div>
+    );
   }
 
   return (
@@ -130,9 +144,6 @@ function LoginForm() {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Page — wraps LoginForm in Suspense (required for useSearchParams at build)
-// ---------------------------------------------------------------------------
 export default function CustomerLoginPage() {
   return (
     <div className="min-h-screen bg-brand-cream flex items-center justify-center px-4 py-16">
