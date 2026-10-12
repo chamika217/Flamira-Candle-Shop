@@ -67,6 +67,7 @@ export default function NewsletterSection() {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter your email address..."
                   required
+                  suppressHydrationWarning
                   className="w-full pl-11 pr-4 py-3.5 rounded-full bg-white border border-brand-border text-sm text-brand-brown placeholder:text-brand-muted/70 focus:outline-none focus:ring-2 focus:ring-brand-terracotta/40 focus:border-brand-terracotta shadow-sm"
                 />
               </div>
