@@ -69,9 +69,13 @@ interface CategoryShowcaseProps {
 }
 
 export default function CategoryShowcase({ categories }: CategoryShowcaseProps) {
+  // Filter to show ONLY parent (top-level) categories — parentId === null
+  // Subcategories are shown when the user navigates into a category
+  const parentCategories = categories.filter((c) => c.parentId === null);
+
   // If Firestore has categories, enrich them, otherwise use our rich curated list
-  const displayList = categories.length > 0
-    ? categories.map((cat, idx) => {
+  const displayList = parentCategories.length > 0
+    ? parentCategories.map((cat, idx) => {
         const fallback = CATEGORY_IMAGES[cat.name] || FALLBACK_CATEGORY_DATA[idx % FALLBACK_CATEGORY_DATA.length];
         return {
           id: cat.id,
